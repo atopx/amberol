@@ -69,6 +69,10 @@ fn main() {
 
     gst::init().expect("Failed to initialize gstreamer");
 
+    // We need to acquire the default context before starting the
+    // application, as we create the AudioPlayer instance when we
+    // create the Application, and the Application will need to
+    // create a glib::MainContext::channel() for it
     let ctx = glib::MainContext::default();
     let _guard = ctx.acquire().unwrap();
 

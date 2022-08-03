@@ -20,7 +20,7 @@
 // AudioPlayer: the main object managing the audio playback
 // ├── PlayerState: the state tracker GObject used by the UI
 // ├── Queue: the playlist tracker GListModel
-// ├── GstBackend: a GstPlayer wrapper
+// ├── PlayerBackend: a playbin element wrapper
 // ╰── controllers: external bits of code that interact with the state
 //     ╰── MprisController: an MPRIS wrapper
 //
@@ -29,7 +29,7 @@
 // state, they will use the glib::Sender to notify the AudioPlayer, which will
 // update the PlayerState.
 //
-// The GstBackend uses a similar sender/receiver pair to communicate with the
+// The PlayerBackend uses a similar sender/receiver pair to communicate with the
 // AudioPlayer whenever the GStreamer state changes.
 //
 // The UI side connects to the PlayerState object for state tracking; all
@@ -48,8 +48,8 @@ mod mpris_controller;
 pub use inhibit_controller::InhibitController;
 pub use mpris_controller::MprisController;
 
-mod gst_backend;
-pub use gst_backend::GstBackend;
+mod player_backend;
+pub use player_backend::PlayerBackend;
 
 mod player;
 mod queue;

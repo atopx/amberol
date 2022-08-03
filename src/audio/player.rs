@@ -11,8 +11,8 @@ use log::{debug, error};
 use crate::{
     application::ApplicationAction,
     audio::{
-        Controller, CoverCache, GstBackend, InhibitController, MprisController, PlayerState, Queue,
-        Song,
+        Controller, CoverCache, InhibitController, MprisController, PlayerBackend, PlayerState,
+        Queue, Song,
     },
 };
 
@@ -24,6 +24,7 @@ pub enum PlaybackAction {
     SkipPrevious,
     SkipNext,
 
+    AboutToFinish,
     UpdatePosition(u64),
     VolumeChanged(f64),
     Repeat(RepeatMode),
@@ -69,7 +70,7 @@ pub enum SeekDirection {
 pub struct AudioPlayer {
     app_sender: Sender<ApplicationAction>,
     receiver: RefCell<Option<Receiver<PlaybackAction>>>,
-    backend: GstBackend,
+    backend: Rc<PlayerBackend>,
     controllers: Vec<Box<dyn Controller>>,
     queue: Queue,
     state: PlayerState,
@@ -94,7 +95,7 @@ impl AudioPlayer {
         let inhibit_controller = InhibitController::new();
         controllers.push(Box::new(inhibit_controller));
 
-        let backend = GstBackend::new(sender);
+        let backend = PlayerBackend::new(sender);
 
         let queue = Queue::default();
         let state = PlayerState::default();
@@ -134,6 +135,7 @@ impl AudioPlayer {
             PlaybackAction::Raise => self.present(),
             PlaybackAction::Repeat(mode) => self.update_repeat_mode(mode),
             PlaybackAction::Seek(pos) => self.seek_position_abs(pos),
+            PlaybackAction::AboutToFinish => self.update_song(),
             // _ => debug!("Received action {:?}", action),
         }
 
@@ -463,6 +465,12 @@ impl AudioPlayer {
 
         if self.queue.is_empty() {
             self.state.set_current_song(None);
+        }
+    }
+
+    fn update_song(&self) {
+        if let Some(song) = self.state.current_song() {
+            debug!("About to finish current song: {}", song);
         }
     }
 }
