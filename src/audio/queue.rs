@@ -13,7 +13,7 @@ mod imp {
 
     use super::*;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug)]
     pub struct Queue {
         pub model: ShuffleListModel,
         pub store: gio::ListStore,
@@ -103,7 +103,9 @@ impl Queue {
 
     pub fn song_at(&self, pos: u32) -> Option<Song> {
         if let Some(song) = self.imp().model.item(pos) {
-            return Some(song.downcast::<Song>().unwrap());
+            let s = song.downcast::<Song>().unwrap();
+            s.reload_cover_art();
+            return Some(s);
         }
 
         None
@@ -328,5 +330,12 @@ impl Queue {
         }
 
         count
+    }
+
+    pub fn drop_cover_art(&self) {
+        for i in 0..self.imp().store.n_items() {
+            let song = self.imp().store.item(i).unwrap();
+            song.downcast_ref::<Song>().unwrap().drop_cover_art();
+        }
     }
 }

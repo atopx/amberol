@@ -183,6 +183,33 @@ impl CoverCache {
         }
     }
 
+    pub fn cover_art_fallback(&mut self, uuid: &str) -> Option<CoverArt> {
+        if let Some(res) = utils::load_cache_cover_art(&uuid) {
+            let cover_pixbuf = res.0;
+            let cache_path = res.1;
+            // The texture we draw on screen
+            let texture = gdk::Texture::for_pixbuf(&cover_pixbuf);
+
+            // The color palette we use for styling the UI
+            if let Some(palette) = utils::load_palette(&cover_pixbuf) {
+                // We want both texture and palette
+                let res = CoverArt {
+                    texture,
+                    palette,
+                    cache: Some(cache_path),
+                };
+
+                self.add_entry(&uuid, res.clone());
+
+                return Some(res);
+            } else {
+                return None;
+            }
+        }
+
+        None
+    }
+
     pub fn clear(&mut self) {
         self.entries.clear();
     }

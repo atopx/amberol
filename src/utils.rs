@@ -51,6 +51,28 @@ pub fn load_cover_texture(buffer: &glib::Bytes) -> Option<gdk_pixbuf::Pixbuf> {
     }
 }
 
+pub fn load_cache_cover_art(uuid: &str) -> Option<(gdk_pixbuf::Pixbuf, PathBuf)> {
+    let mut cache_dir = glib::user_cache_dir();
+    cache_dir.push("amberol");
+    cache_dir.push("covers");
+    glib::mkdir_with_parents(&cache_dir, 0o755);
+
+    cache_dir.push(format!("{}.png", &uuid));
+
+    match gdk_pixbuf::Pixbuf::from_file_at_scale(
+        &cache_dir,
+        COVER_SIZE,
+        COVER_SIZE,
+        true,
+    ) {
+        Ok(pixbuf) => Some((pixbuf, cache_dir)),
+        Err(err) => {
+            warn!("Unable to load cover art: {}", err);
+            None
+        }
+    }
+}
+
 pub fn cache_cover_art(uuid: &str, pixbuf: &gdk_pixbuf::Pixbuf) -> Option<PathBuf> {
     let mut cache_dir = glib::user_cache_dir();
     cache_dir.push("amberol");

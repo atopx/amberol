@@ -207,6 +207,10 @@
         <attribute name="label" translatable="yes">Clear</attribute>
         <attribute name="action">queue.clear</attribute>
       </item>
+      <item>
+        <attribute name="label">Clear Cover Cache</attribute>
+        <attribute name="action">queue.clear-cache</attribute>
+      </item>
     </section>
     <section>
       <item>

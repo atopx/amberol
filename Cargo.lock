@@ -25,6 +25,7 @@ dependencies = [
  "color-thief",
  "gdk-pixbuf",
  "gettext-rs",
+ "gio",
  "gstreamer",
  "gstreamer-audio",
  "gstreamer-player",

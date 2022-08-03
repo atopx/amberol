@@ -4,7 +4,7 @@
 use std::{cell::RefCell, fmt, rc::Rc};
 
 use glib::{clone, Receiver, Sender};
-use gtk::glib;
+use gtk::{gio, glib, prelude::*};
 use gtk_macros::send;
 use log::{debug, error};
 
@@ -73,6 +73,7 @@ pub struct AudioPlayer {
     controllers: Vec<Box<dyn Controller>>,
     queue: Queue,
     state: PlayerState,
+    monitor: gio::MemoryMonitor,
 }
 
 impl fmt::Debug for AudioPlayer {
@@ -99,6 +100,8 @@ impl AudioPlayer {
         let queue = Queue::default();
         let state = PlayerState::default();
 
+        let monitor = gio::MemoryMonitor::dup_default();
+
         let res = Rc::new(Self {
             app_sender,
             receiver,
@@ -106,9 +109,11 @@ impl AudioPlayer {
             controllers,
             queue,
             state,
+            monitor,
         });
 
         res.clone().setup_channel();
+        res.clone().setup_memory_monitor();
 
         res
     }
@@ -138,6 +143,12 @@ impl AudioPlayer {
         }
 
         glib::Continue(true)
+    }
+
+    fn setup_memory_monitor(&self) {
+        self.monitor.connect_low_memory_warning(clone!(@strong self as this => move |_, _level| {
+            // ...
+        }));
     }
 
     fn set_playback_state(&self, state: PlaybackState) {
@@ -464,5 +475,12 @@ impl AudioPlayer {
         if self.queue.is_empty() {
             self.state.set_current_song(None);
         }
+    }
+
+    pub fn drop_cover_art(&self) {
+        self.queue.drop_cover_art();
+
+        let mut cover_cache = CoverCache::global().lock().unwrap();
+        cover_cache.clear();
     }
 }

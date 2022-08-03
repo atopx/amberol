@@ -83,6 +83,40 @@ impl SongData {
         None
     }
 
+    pub fn drop_cover_art(&self) -> Self {
+        Self {
+            artist: self.artist.clone(),
+            title: self.title.clone(),
+            album: self.album.clone(),
+            cover_art: None,
+            cover_uuid: self.cover_uuid.clone(),
+            uuid: self.uuid.clone(),
+            duration: self.duration(),
+            file: self.file.clone(),
+        }
+    }
+
+    pub fn from_song(song: &SongData) -> Self {
+        let mut cover_cache = CoverCache::global().lock().unwrap();
+
+        let cover_art = if let Some(cover_uuid) = song.cover_uuid() {
+            cover_cache.cover_art_fallback(&cover_uuid)
+        } else {
+            None
+        };
+
+        Self {
+            artist: song.artist.clone(),
+            title: song.title.clone(),
+            album: song.album.clone(),
+            cover_art,
+            cover_uuid: song.cover_uuid.clone(),
+            uuid: song.uuid.clone(),
+            duration: song.duration(),
+            file: song.file.clone(),
+        }
+    }
+
     pub fn from_uri(uri: &str) -> Self {
         let now = Instant::now();
 
@@ -391,6 +425,20 @@ impl Song {
 
     pub fn search_key(&self) -> String {
         format!("{} {} {}", self.artist(), self.album(), self.title())
+    }
+
+    pub fn drop_cover_art(&self) {
+        let data = self.imp().data.borrow().drop_cover_art();
+        self.imp().data.replace(data);
+        self.notify("cover");
+    }
+
+    pub fn reload_cover_art(&self) {
+        if self.imp().data.borrow().cover_texture().is_none() {
+            let data = SongData::from_song(&self.imp().data.borrow());
+            self.imp().data.replace(data);
+            self.notify("cover");
+        }
     }
 }
 

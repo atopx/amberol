@@ -9,6 +9,7 @@ edition = "2018"
 
 [dependencies]
 color-thief = "0.2.1"
+gio = { version = "0.15", features = ["v2_64"] }
 gdk-pixbuf = { version = "0.15", features = ["v2_36"] }
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 gtk = { version = "0.4.8", package = "gtk4", features = ["v4_6"] }
