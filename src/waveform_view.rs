@@ -281,65 +281,32 @@ mod imp {
                         }
 
                         // The block rectangle, clamped to avoid overdrawing
-                        let x = offset as f32;
-                        let y = f32::clamp(
-                            center_y as f32 - right as f32 * h as f32,
-                            1.0,
-                            h as f32 / 2.0,
-                        );
-                        let width: f32 = 2.0;
-                        let height = f32::clamp(
-                            right as f32 * h as f32 + left as f32 * h as f32,
-                            2.0,
-                            h as f32,
-                        );
+                        let rec = {
+                            let x = offset as f32;
+                            let y = f32::clamp(
+                                center_y as f32 - right as f32 * h as f32,
+                                1.0,
+                                h as f32 / 2.0,
+                            );
+                            let width: f32 = 2.0;
+                            let height = f32::clamp(
+                                right as f32 * h as f32 + left as f32 * h as f32,
+                                2.0,
+                                h as f32,
+                            );
+                            graphene::Rect::new(x, y, width, height)
+                        };
 
-                        if is_rtl {
-                            if offset > cursor_pos[0] {
-                                snapshot.append_color(
-                                    &color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            } else if offset > cursor_pos[1] {
-                                let hover_color = gdk::RGBA::new(
-                                    color.red(),
-                                    color.green(),
-                                    color.blue(),
-                                    color.alpha() * hover_opacity,
-                                );
-                                snapshot.append_color(
-                                    &hover_color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            } else {
-                                snapshot.append_color(
-                                    &empty_color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            }
+                        // Notice the xor `^`. if `is_rtl` is true, the boolean is
+                        // flipped.
+                        if (offset < cursor_pos[0]) ^ is_rtl {
+                            snapshot.append_color(&color, &rec);
+                        } else if (offset < cursor_pos[1]) ^ is_rtl {
+                            let mut hover_color = color.clone();
+                            hover_color.set_alpha(color.alpha() * hover_opacity);
+                            snapshot.append_color(&hover_color, &rec);
                         } else {
-                            if offset < cursor_pos[0] {
-                                snapshot.append_color(
-                                    &color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            } else if offset < cursor_pos[1] {
-                                let hover_color = gdk::RGBA::new(
-                                    color.red(),
-                                    color.green(),
-                                    color.blue(),
-                                    color.alpha() * hover_opacity,
-                                );
-                                snapshot.append_color(
-                                    &hover_color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            } else {
-                                snapshot.append_color(
-                                    &empty_color,
-                                    &graphene::Rect::new(x, y, width, height),
-                                );
-                            }
+                            snapshot.append_color(&empty_color, &rec);
                         }
 
                         accum.left = 0.0;
