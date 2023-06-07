@@ -91,6 +91,9 @@ mod imp {
         pub notify_nsongs_id: RefCell<Option<glib::SignalHandlerId>>,
         pub notify_current_id: RefCell<Option<glib::SignalHandlerId>>,
         pub notify_peaks_id: RefCell<Option<glib::SignalHandlerId>>,
+
+        pub add_song_toast: adw::Toast,
+        pub songs_added_combo: Cell<u32>,
     }
 
     #[glib::object_subclass]
@@ -197,6 +200,8 @@ mod imp {
                 notify_nsongs_id: RefCell::new(None),
                 notify_current_id: RefCell::new(None),
                 notify_peaks_id: RefCell::new(None),
+                add_song_toast: adw::Toast::new(""),
+                songs_added_combo: Cell::new(0),
             }
         }
     }
@@ -270,6 +275,7 @@ impl Window {
         win.setup_actions();
         win.setup_playlist();
         win.setup_drop_target();
+        win.setup_add_song_toast();
         win.setup_provider();
         win.bind_state();
         win.bind_queue();
@@ -565,10 +571,8 @@ impl Window {
                                     if was_empty {
                                         player.play();
                                     } else {
-                                        win.add_skip_to_toast(
-                                            i18n("Added a new song"),
-                                            i18n("Play"),
-                                            queue.n_songs() - 1,
+                                        win.add_new_song_toast(
+                                            queue.n_songs() - 1
                                         );
                                     }
                                 } else {
@@ -1384,12 +1388,43 @@ impl Window {
         self.imp().toast_overlay.add_toast(toast);
     }
 
-    pub fn add_skip_to_toast(&self, msg: String, button: String, pos: u32) {
-        let toast = adw::Toast::new(&msg);
-        toast.set_button_label(Some(&button));
-        toast.set_action_name(Some("win.skip-to"));
-        toast.set_action_target_value(Some(&pos.to_variant()));
-        self.imp().toast_overlay.add_toast(toast);
+    fn setup_add_song_toast(&self) {
+        self.imp()
+            .add_song_toast
+            .set_action_name(Some("win.skip-to"));
+        self.imp()
+            .add_song_toast
+            .connect_dismissed(clone!(@weak self as win => move |_| {
+                win.imp().songs_added_combo.set(0);
+            }));
+    }
+
+    pub fn add_new_song_toast(&self, skip_pos: u32) {
+        let toast = &self.imp().add_song_toast;
+        let combo = self.imp().songs_added_combo.get() + 1;
+        let msg = ni18n_f(
+            // Translators: the `{}` must be left unmodified;
+            // it will be expanded to the number of songs added
+            // to the playlist
+            "Added one song",
+            "Added {} songs",
+            combo,
+            &[&combo.to_string()],
+        );
+        let button_label;
+
+        if self.imp().songs_added_combo.get() == 0 {
+            button_label = i18n("Play");
+        } else {
+            button_label = i18n("Play Last");
+        }
+
+        toast.set_title(&msg);
+        toast.set_button_label(Some(&button_label));
+        toast.set_action_target_value(Some(&skip_pos.to_variant()));
+
+        self.imp().toast_overlay.add_toast(toast.clone());
+        self.imp().songs_added_combo.set(combo);
     }
 
     fn copy_song(&self) {
