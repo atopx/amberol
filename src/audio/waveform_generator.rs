@@ -76,6 +76,7 @@ impl Controller for WaveformGenerator {
 
     fn set_position(&self, _position: u64) {}
     fn set_repeat_mode(&self, _mode: RepeatMode) {}
+    fn initialize_mpris_state(&self) {}
 }
 
 impl WaveformGenerator {

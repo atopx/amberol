@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2022  Emmanuele Bassi
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use std::cell::Cell;
+
 use adw::subclass::prelude::*;
 use glib::clone;
 use gtk::{gio, glib, prelude::*, CompositeTemplate};
 use log::debug;
-use std::cell::Cell;
 
 mod imp {
     use glib::{subclass::Signal, ParamSpec, ParamSpecBoolean, ParamSpecDouble, Value};

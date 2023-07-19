@@ -9,4 +9,5 @@ pub trait Controller {
     fn set_song(&self, song: &Song);
     fn set_position(&self, position: u64);
     fn set_repeat_mode(&self, repeat: RepeatMode);
+    fn initialize_mpris_state(&self);
 }

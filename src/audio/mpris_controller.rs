@@ -5,7 +5,7 @@ use std::{cell::RefCell, sync::Arc, time::Duration};
 
 use glib::{clone, Sender};
 use gtk::{gio, glib, prelude::*};
-use log::error;
+use log::{debug, error};
 use mpris_player::{LoopStatus, Metadata, MprisPlayer, OrgMprisMediaPlayer2Player, PlaybackStatus};
 
 use crate::{
@@ -175,6 +175,7 @@ impl Controller for MprisController {
     fn set_playback_state(&self, state: &PlaybackState) {
         self.mpris.set_can_play(true);
 
+        debug!("set_playback_state({:?})", state);
         match state {
             PlaybackState::Playing => self.mpris.set_playback_status(PlaybackStatus::Playing),
             PlaybackState::Paused => self.mpris.set_playback_status(PlaybackStatus::Paused),
@@ -198,5 +199,9 @@ impl Controller for MprisController {
             RepeatMode::RepeatOne => self.mpris.set_loop_status(LoopStatus::Track),
             RepeatMode::RepeatAll => self.mpris.set_loop_status(LoopStatus::Playlist),
         }
+    }
+    fn initialize_mpris_state(&self) {
+        self.mpris.set_can_play(true);
+        debug!("set_can_play(true)");
     }
 }

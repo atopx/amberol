@@ -361,7 +361,7 @@ impl AudioPlayer {
             }
         } else {
             self.skip_to(0);
-            self.set_playback_state(PlaybackState::Stopped);
+            self.set_playback_state(PlaybackState::Paused);
         }
     }
 
@@ -442,6 +442,11 @@ impl AudioPlayer {
     pub fn seek_position_abs(&self, position: u64) {
         let pos = u64::max(position, self.state.duration());
         self.backend.seek_position(pos);
+    }
+    pub fn initialize_mpris_state(&self) {
+        for c in &self.controllers {
+            c.initialize_mpris_state();
+        }
     }
 
     pub fn queue(&self) -> &Queue {
