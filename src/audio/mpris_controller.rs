@@ -134,6 +134,12 @@ impl MprisController {
                     error!("Unable to send Seek({pos}): {e}");
                 }
             }));
+        self.mpris
+            .connect_volume(clone!(@strong self.sender as sender => move |vol| {
+                if let Err(e) = sender.send(PlaybackAction::VolumeChanged(vol)) {
+                    error!("Unable to send VolumeChanged({vol}): {e}");
+                }
+            }));
     }
 
     fn update_metadata(&self) {
@@ -191,6 +197,11 @@ impl Controller for MprisController {
     fn set_position(&self, position: u64) {
         let msecs = Duration::from_secs(position).as_micros();
         self.mpris.set_position(msecs as i64);
+    }
+
+    fn set_volume(&self, volume: f64) {
+        debug!("mpris volume set to: {}", &volume);
+        let _ = self.mpris.set_volume(volume);
     }
 
     fn set_repeat_mode(&self, repeat: RepeatMode) {
