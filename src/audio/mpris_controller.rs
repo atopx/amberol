@@ -206,9 +206,16 @@ impl Controller for MprisController {
         self.update_metadata();
     }
 
-    fn set_position(&self, position: u64) {
+    fn set_position(&self, position: u64, notify: bool) {
         let pos = Time::from_secs(position as i64);
         self.mpris.set_position(pos);
+        if notify {
+            glib::spawn_future_local(clone!(@weak self.mpris as mpris => async move {
+                if let Err(err) = mpris.seeked(pos).await {
+                    error!("Unable to emit MPRIS Seeked: {err:?}");
+                }
+            }));
+        }
     }
 
     fn set_repeat_mode(&self, repeat: RepeatMode) {
