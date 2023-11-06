@@ -135,11 +135,10 @@ impl MprisController {
         );
 
         self.mpris
-            .connect_seek(clone!(@strong self.sender as sender => move |_, position| {
-                let pos = position.as_secs().unsigned_abs();
-
-                if let Err(e) = sender.send_blocking(PlaybackAction::Seek(pos)) {
-                    error!("Unable to send Seek({pos}): {e}");
+            .connect_seek(clone!(@strong self.sender as sender => move |_, offset| {
+                let offset = offset.as_secs();
+                if let Err(e) = sender.send_blocking(PlaybackAction::Seek(offset)) {
+                    error!("Unable to send Seek({offset}): {e}");
                 }
             }));
     }
