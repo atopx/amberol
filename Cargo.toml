@@ -7,6 +7,9 @@ authors = ["Emmanuele Bassi <ebassi@gnome.org>"]
 version = "0.1.0"
 edition = "2018"
 
+[profile.release]
+lto = true
+
 [dependencies]
 color-thief = "0.2.1"
 gdk-pixbuf = { version = "0.18", features = ["v2_42"] }

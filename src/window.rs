@@ -126,13 +126,46 @@ mod imp {
                 debug!("Window::queue.repeat()");
                 win.player().map(|p| p.toggle_repeat_mode());
             });
-            klass.install_action("queue.add-song", None, move |win, _, _| {
+            klass.install_action_async("queue.add-song", None, |win, _, _| async move {
                 debug!("Window::win.add-song()");
-                win.add_song();
+                let filters = gio::ListStore::new::<gtk::FileFilter>();
+                let filter = gtk::FileFilter::new();
+                gtk::FileFilter::set_name(&filter, Some(&i18n("Audio files")));
+                filter.add_mime_type("audio/*");
+                filters.append(&filter);
+
+                let dialog = gtk::FileDialog::builder()
+                    .accept_label(&i18n("_Add Song"))
+                    .filters(&filters)
+                    .modal(true)
+                    .title(&i18n("Open File"))
+                    .build();
+
+                if let Ok(files) = dialog.open_multiple_future(Some(&win)).await {
+                    if files.n_items() == 0 {
+                        win.add_toast(i18n("Unable to access files"));
+                    } else {
+                        win.add_files_to_queue(&files);
+                    }
+                }
             });
-            klass.install_action("queue.add-folder", None, move |win, _, _| {
+            klass.install_action_async("queue.add-folder", None, |win, _, _| async move {
                 debug!("Window::win.add-folder()");
-                win.add_folder();
+                let dialog = gtk::FileDialog::builder()
+                    .accept_label(&i18n("_Add Folder"))
+                    .modal(true)
+                    .title(&i18n("Open Folder"))
+                    .build();
+
+                if let Ok(res) = dialog.select_multiple_folders_future(Some(&win)).await {
+                    if let Some(files) = res {
+                        if files.n_items() == 0 {
+                            win.add_toast(i18n("Unable to access files"));
+                        } else {
+                            win.add_files_to_queue(&files);
+                        }
+                    }
+                }
             });
             klass.install_action("queue.restore-playlist", None, move |win, _, _| {
                 debug!("Window::queue.restore-playlist()");
@@ -141,6 +174,10 @@ mod imp {
             klass.install_action("win.copy", None, move |win, _, _| {
                 debug!("Window::win.copy()");
                 win.copy_song();
+            });
+            klass.install_action("win.remove-song", None, move |win, _, _| {
+                debug!("Window::win.remove-song()");
+                win.remove_current_song();
             });
             klass.install_action("queue.clear", None, move |win, _, _| {
                 debug!("Window::queue.clear()");
@@ -424,53 +461,6 @@ impl Window {
         }
     }
 
-    fn add_song(&self) {
-        let ctx = glib::MainContext::default();
-        ctx.spawn_local(clone!(@weak self as win => async move {
-            let filters = gio::ListStore::new::<gtk::FileFilter>();
-            let filter = gtk::FileFilter::new();
-            gtk::FileFilter::set_name(&filter, Some(&i18n("Audio files")));
-            filter.add_mime_type("audio/*");
-            filters.append(&filter);
-
-            let dialog = gtk::FileDialog::builder()
-                .accept_label(&i18n("_Add Song"))
-                .filters(&filters)
-                .modal(true)
-                .title(&i18n("Open File"))
-                .build();
-
-            if let Ok(files) = dialog.open_multiple_future(Some(&win)).await {
-                if files.n_items() == 0 {
-                    win.add_toast(i18n("Unable to access files"));
-                } else {
-                    win.add_files_to_queue(&files);
-                }
-            }
-        }));
-    }
-
-    fn add_folder(&self) {
-        let ctx = glib::MainContext::default();
-        ctx.spawn_local(clone!(@weak self as win => async move {
-            let dialog = gtk::FileDialog::builder()
-                .accept_label(&i18n("_Add Folder"))
-                .modal(true)
-                .title(&i18n("Open Folder"))
-                .build();
-
-            if let Ok(res) = dialog.select_multiple_folders_future(Some(&win)).await {
-                if let Some(files) = res {
-                    if files.n_items() == 0 {
-                        win.add_toast(i18n("Unable to access files"));
-                    } else {
-                        win.add_files_to_queue(&files);
-                    }
-                }
-            }
-        }));
-    }
-
     fn restore_playlist(&self) {
         if let Some(songs) = utils::load_cached_songs() {
             self.queue_songs(songs);
@@ -674,15 +664,15 @@ impl Window {
             // Bind the song properties to the UI
             state
                 .bind_property("title", &imp.song_details.get().title_label(), "label")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
             state
                 .bind_property("artist", &imp.song_details.get().artist_label(), "label")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
             state
                 .bind_property("album", &imp.song_details.get().album_label(), "label")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
             state
                 .bind_property(
@@ -690,7 +680,7 @@ impl Window {
                     &imp.playback_control.get().volume_control(),
                     "volume",
                 )
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
         }
     }
@@ -999,12 +989,12 @@ impl Window {
 
             win
                 .bind_property("playlist-selection", &row, "selection-mode")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
 
             list_item
                 .bind_property("item", &row, "song")
-                .flags(glib::BindingFlags::DEFAULT | glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
 
             list_item
@@ -1087,12 +1077,12 @@ impl Window {
             imp.playlist_view
                 .playlist_searchentry()
                 .bind_property("text", &filter, "search")
-                .flags(glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
             imp.playlist_view
                 .playlist_searchentry()
                 .bind_property("text", &sorter, "search")
-                .flags(glib::BindingFlags::SYNC_CREATE)
+                .sync_create()
                 .build();
             imp.playlist_view
                 .playlist_searchentry()
@@ -1393,6 +1383,16 @@ impl Window {
                     &[("title", &song.title()), ("artist", &song.artist())],
                 );
                 self.clipboard().set_text(&s);
+            }
+        }
+    }
+
+    fn remove_current_song(&self) {
+        if let Some(player) = self.player() {
+            let state = player.state();
+            if let Some(song) = state.current_song() {
+                self.remove_song(&song);
+                utils::store_playlist(player.queue());
             }
         }
     }

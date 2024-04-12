@@ -148,12 +148,6 @@
   <menu id="primary_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">Copy</attribute>
-        <attribute name="action">win.copy</attribute>
-      </item>
-    </section>
-    <section>
-      <item>
         <attribute name="label" translatable="yes">Add _Song</attribute>
         <attribute name="action">queue.add-song</attribute>
       </item>

@@ -517,14 +517,21 @@ impl AudioPlayer {
     }
 
     pub fn remove_song(&self, song: &Song) {
-        if song.playing() {
+        let was_first_song = self.queue.is_first_song();
+        let was_last_song = self.queue.is_last_song();
+
+        if was_first_song {
             self.skip_next();
+        } else {
+            self.skip_previous();
         }
 
         self.queue.remove_song(song);
 
-        if self.queue.is_empty() {
-            self.state.set_current_song(None);
+        if was_first_song {
+            self.skip_previous();
+        } else if !was_last_song {
+            self.skip_next();
         }
     }
 

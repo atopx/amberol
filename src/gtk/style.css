@@ -35,14 +35,14 @@ songcover image.card {
 songdetails {
   padding-top: 12px;
   padding-bottom: 24px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 songdetails label.song-title {
   /* match title-1 */
   font-size: 15pt;
   font-weight: 800;
-  padding-left: 12px;
-  padding-right: 12px;
 }
 
 songdetails label.song-title,

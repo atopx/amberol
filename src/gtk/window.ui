@@ -105,6 +105,10 @@
                                 </child>
 
                                 <property name="content">
+                                  <object class="AdwClamp">
+                                    <property name="maximum-size">320</property>
+                                    <property name="child">
+
                                   <object class="GtkBox" id="main_box">
                                     <property name="orientation">vertical</property>
                                     <property name="valign">center</property>
@@ -125,7 +129,6 @@
                                       <object class="GtkBox">
                                         <property name="orientation">vertical</property>
                                         <property name="spacing">2</property>
-                                        <property name="width-request">256</property>
                                         <child>
                                           <object class="GtkBox">
                                             <property name="halign">center</property>
@@ -183,6 +186,9 @@
                                         <property name="margin-bottom">24</property>
                                       </object>
                                     </child>
+                                  </object>
+
+                                    </property>
                                   </object>
 
                                 </property>

@@ -4,7 +4,8 @@
     "runtime-version" : "master",
     "sdk" : "org.gnome.Sdk",
     "sdk-extensions" : [
-        "org.freedesktop.Sdk.Extension.rust-stable"
+        "org.freedesktop.Sdk.Extension.rust-stable",
+        "org.freedesktop.Sdk.Extension.llvm16"
     ],
     "command" : "amberol",
     "finish-args" : [
@@ -17,14 +18,24 @@
         "--filesystem=xdg-download:ro"
     ],
     "build-options" : {
-        "append-path" : "/usr/lib/sdk/rust-stable/bin",
+        "append-path" : "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm16/bin",
+        "prepend-ld-library-path": "/usr/lib/sdk/llvm16/lib",
         "build-args" : [
+            "--share=network"
+        ],
+        "test-args": [
+            "--socket=x11",
             "--share=network"
         ],
         "env" : {
             "G_MESSAGES_DEBUG" : "none",
             "RUST_BACKTRACE" : "1",
-            "RUST_LOG" : "amberol=debug,glib=debug"
+            "RUST_LOG" : "amberol=debug,glib=debug",
+            "CARGO_REGISTRIES_CRATES_IO_PROTOCOL": "sparse",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang",
+            "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold",
+            "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER": "clang",
+            "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold"
         }
     },
     "cleanup" : [
@@ -41,7 +52,6 @@
     "modules" : [
         {
             "name" : "amberol",
-            "builddir" : true,
             "buildsystem" : "meson",
             "config-opts": [
                 "-Dprofile=development"
@@ -49,7 +59,7 @@
             "sources" : [
                 {
                     "type" : "git",
-                    "url" : "https://gitlab.gnome.org/ebassi/amberol.git"
+                    "url" : "https://gitlab.gnome.org/World/amberol.git"
                 }
             ]
         }
