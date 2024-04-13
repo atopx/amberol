@@ -361,7 +361,7 @@ impl AudioPlayer {
             }
         } else {
             self.skip_to(0);
-            self.set_playback_state(PlaybackState::Stopped);
+            self.set_playback_state(PlaybackState::Paused);
         }
     }
 
@@ -440,8 +440,17 @@ impl AudioPlayer {
     }
 
     pub fn seek_position_abs(&self, position: u64) {
-        let pos = u64::max(position, self.state.duration());
-        self.backend.seek_position(pos);
+        if position > self.state.duration() {
+            debug!("seek position is greater than track length");
+            self.backend.seek_position(self.state.duration());
+        } else {
+            self.backend.seek_position(position);
+        }
+    }
+    pub fn initialize_mpris_state(&self) {
+        for c in &self.controllers {
+            c.initialize_mpris_state();
+        }
     }
 
     pub fn queue(&self) -> &Queue {
@@ -471,6 +480,13 @@ impl AudioPlayer {
     fn update_volume(&self, volume: f64) {
         debug!("Updating volume to: {}", &volume);
         self.state.set_volume(volume);
+
+        // This must remain disabled until the buggy interaction between set_volume and
+        // connect_volume can be resolved
+        //
+        // for c in &self.controllers {
+        //     c.set_volume(volume);
+        // }
     }
 
     pub fn set_volume(&self, volume: f64) {

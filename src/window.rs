@@ -552,6 +552,7 @@ impl Window {
                                 debug!("Queue was empty: {}, new size: {}", was_empty, queue.n_songs());
                                 if was_empty {
                                     player.skip_to(0);
+                                    player.initialize_mpris_state();
                                 }
 
                                 // Allow jumping to the song we just added

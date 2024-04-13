@@ -5,7 +5,7 @@ use std::{cell::RefCell, sync::Arc, time::Duration};
 
 use glib::{clone, Sender};
 use gtk::{gio, glib, prelude::*};
-use log::error;
+use log::{debug, error};
 use mpris_player::{LoopStatus, Metadata, MprisPlayer, OrgMprisMediaPlayer2Player, PlaybackStatus};
 
 use crate::{
@@ -134,6 +134,12 @@ impl MprisController {
                     error!("Unable to send Seek({pos}): {e}");
                 }
             }));
+        self.mpris
+            .connect_volume(clone!(@strong self.sender as sender => move |vol| {
+                if let Err(e) = sender.send(PlaybackAction::VolumeChanged(vol)) {
+                    error!("Unable to send VolumeChanged({vol}): {e}");
+                }
+            }));
     }
 
     fn update_metadata(&self) {
@@ -175,6 +181,7 @@ impl Controller for MprisController {
     fn set_playback_state(&self, state: &PlaybackState) {
         self.mpris.set_can_play(true);
 
+        debug!("set_playback_state({:?})", state);
         match state {
             PlaybackState::Playing => self.mpris.set_playback_status(PlaybackStatus::Playing),
             PlaybackState::Paused => self.mpris.set_playback_status(PlaybackStatus::Paused),
@@ -192,11 +199,20 @@ impl Controller for MprisController {
         self.mpris.set_position(msecs as i64);
     }
 
+    fn set_volume(&self, volume: f64) {
+        debug!("mpris volume set to: {}", &volume);
+        let _ = self.mpris.set_volume(volume);
+    }
+
     fn set_repeat_mode(&self, repeat: RepeatMode) {
         match repeat {
             RepeatMode::Consecutive => self.mpris.set_loop_status(LoopStatus::None),
             RepeatMode::RepeatOne => self.mpris.set_loop_status(LoopStatus::Track),
             RepeatMode::RepeatAll => self.mpris.set_loop_status(LoopStatus::Playlist),
         }
+    }
+    fn initialize_mpris_state(&self) {
+        self.mpris.set_can_play(true);
+        debug!("set_can_play(true)");
     }
 }
