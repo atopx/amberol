@@ -15,7 +15,7 @@ mod imp {
     };
     use once_cell::sync::Lazy;
 
-    use crate::{audio::Song, utils::cmp_two_files};
+    use crate::{audio::Song, utils::cmp_two_songs};
 
     #[derive(Default)]
     pub struct FuzzySorter {
@@ -62,7 +62,7 @@ mod imp {
                 let item2_score = matcher.fuzzy_match(&item2_key, search);
                 item1_score.cmp(&item2_score).reverse().into()
             } else {
-                cmp_two_files(None, &item1.file(), &item2.file()).into()
+                cmp_two_songs(item1, item2).into()
             }
         }
 

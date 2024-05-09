@@ -161,37 +161,34 @@ fn load_files_from_folder_internal(
         }
     }
 
-    // gio::FileEnumerator has no guaranteed order, so we should
-    // rely on the basename being formatted in a way that gives us an
-    // implicit order; if anything, this will queue songs in the same
-    // order in which they appear in the directory when browsing its
-    // contents
-    files.sort_by(|a, b| cmp_two_files(Some(base), a, b));
-
     files
 }
 
-pub fn cmp_two_files(base: Option<&gio::File>, a: &gio::File, b: &gio::File) -> Ordering {
+pub fn cmp_two_songs(a: &Song, b: &Song) -> Ordering {
+    let key_artist_a = glib::CollationKey::from(a.artist());
+    let key_artist_b = glib::CollationKey::from(b.artist());
+    key_artist_a
+        .cmp(&key_artist_b)
+        .then_with(|| {
+            let key_a = glib::CollationKey::from(a.album());
+            let key_b = glib::CollationKey::from(b.album());
+            key_a.cmp(&key_b)
+        })
+        .then_with(|| a.disk().cmp(&b.disk()))
+        .then_with(|| a.disk_track().cmp(&b.disk_track()))
+        .then_with(|| {
+            let key_a = glib::CollationKey::from(a.title());
+            let key_b = glib::CollationKey::from(b.title());
+            key_a.cmp(&key_b)
+        })
+        .then_with(|| cmp_two_files(&a.file(), &b.file()))
+}
+
+pub fn cmp_two_files(a: &gio::File, b: &gio::File) -> Ordering {
     let parent_a = a.parent().unwrap();
     let parent_b = b.parent().unwrap();
-    let parent_basename_a = if let Some(base) = base {
-        if let Some(path) = base.relative_path(&parent_a) {
-            path
-        } else {
-            parent_a.basename().unwrap()
-        }
-    } else {
-        parent_a.basename().unwrap()
-    };
-    let parent_basename_b = if let Some(base) = base {
-        if let Some(path) = base.relative_path(&parent_b) {
-            path
-        } else {
-            parent_b.basename().unwrap()
-        }
-    } else {
-        parent_b.basename().unwrap()
-    };
+    let parent_basename_a = parent_a.basename().unwrap();
+    let parent_basename_b = parent_b.basename().unwrap();
     let basename_a = a.basename().unwrap();
     let basename_b = b.basename().unwrap();
 
