@@ -22,6 +22,13 @@ pub struct GstReplayGain {
     rg_volume: gst::Element,
 }
 
+fn send_update_position(sender: &Sender<PlaybackAction>, clock: gst::ClockTime, notify: bool) {
+    let pos = clock.seconds();
+    if let Err(e) = sender.send_blocking(PlaybackAction::UpdatePosition(pos, notify)) {
+        error!("Failed to send UpdatePosition({pos}): {e}");
+    }
+}
+
 impl GstReplayGain {
     pub fn new() -> Result<GstReplayGain, Box<dyn std::error::Error>> {
         let rg_volume = gst::ElementFactory::make_with_name("rgvolume", Some("rg volume"))?;
@@ -101,11 +108,14 @@ impl GstBackend {
         self.gst_player.connect_position_updated(
             clone!(@strong self.sender as sender => move |_, clock| {
                 if let Some(clock) = clock {
-                    let pos = clock.seconds();
-                    if let Err(e) = sender.send_blocking(PlaybackAction::UpdatePosition(pos)) {
-                        error!("Failed to send UpdatePosition({pos}): {e}");
-                    }
+                    send_update_position(&sender, clock, false);
                 }
+            }),
+        );
+
+        self.gst_player.connect_seek_done(
+            clone!(@strong self.sender as sender => move |_, clock| {
+                send_update_position(&sender, clock, true);
             }),
         );
 
