@@ -25,6 +25,8 @@ pub struct SongData {
     artist: Option<String>,
     title: Option<String>,
     album: Option<String>,
+    disk: Option<u32>,
+    disk_track: Option<u32>,
     cover_art: Option<CoverArt>,
     cover_uuid: Option<String>,
     uuid: Option<String>,
@@ -43,6 +45,14 @@ impl SongData {
 
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
+    }
+
+    pub fn disk(&self) -> Option<u32> {
+        self.disk
+    }
+
+    pub fn disk_track(&self) -> Option<u32> {
+        self.disk_track
     }
 
     pub fn uuid(&self) -> Option<&str> {
@@ -100,6 +110,8 @@ impl SongData {
         let mut artist = None;
         let mut title = None;
         let mut album = None;
+        let mut disk = None;
+        let mut disk_track = None;
         let mut cover_art = None;
         let mut cover_uuid = None;
         if let Some(tag) = tagged_file.primary_tag() {
@@ -107,6 +119,9 @@ impl SongData {
             artist = tag.artist().map(|s| s.to_string());
             title = tag.title().map(|s| s.to_string());
             album = tag.album().map(|s| s.to_string());
+
+            disk = tag.disk();
+            disk_track = tag.track();
             if let Some(res) = cover_cache.cover_art(&path, tag) {
                 cover_art = Some(res.0);
                 cover_uuid = Some(res.1);
@@ -168,6 +183,8 @@ impl SongData {
             artist,
             title,
             album,
+            disk,
+            disk_track,
             cover_art,
             cover_uuid,
             uuid,
@@ -191,6 +208,8 @@ impl Default for SongData {
             artist: Some("Invalid Artist".to_string()),
             title: Some("Invalid Title".to_string()),
             album: Some("Invalid Album".to_string()),
+            disk: None,
+            disk_track: None,
             cover_art: None,
             cover_uuid: None,
             uuid: None,
@@ -224,6 +243,8 @@ mod imp {
                     ParamSpecString::builder("artist").read_only().build(),
                     ParamSpecString::builder("title").read_only().build(),
                     ParamSpecString::builder("album").read_only().build(),
+                    ParamSpecUInt::builder("disk").read_only().build(),
+                    ParamSpecUInt::builder("disk-track").read_only().build(),
                     ParamSpecUInt::builder("duration").read_only().build(),
                     ParamSpecObject::builder::<gdk::Texture>("cover")
                         .read_only()
@@ -244,6 +265,8 @@ mod imp {
                         obj.notify("artist");
                         obj.notify("title");
                         obj.notify("album");
+                        obj.notify("disk");
+                        obj.notify("disk-track");
                         obj.notify("duration");
                         obj.notify("cover");
                     }
@@ -266,6 +289,8 @@ mod imp {
                 "artist" => obj.artist().to_value(),
                 "title" => obj.title().to_value(),
                 "album" => obj.album().to_value(),
+                "disk" => obj.disk().to_value(),
+                "disk-track" => obj.disk_track().to_value(),
                 "duration" => obj.duration().to_value(),
                 "uri" => obj.uri().to_value(),
                 "cover" => obj.cover_texture().to_value(),
@@ -329,6 +354,20 @@ impl Song {
         match self.imp().data.borrow().album() {
             Some(album) => album.to_string(),
             None => i18n("Unknown album"),
+        }
+    }
+
+    pub fn disk(&self) -> u32 {
+        match self.imp().data.borrow().disk() {
+            Some(disk) => disk,
+            None => 0,
+        }
+    }
+
+    pub fn disk_track(&self) -> u32 {
+        match self.imp().data.borrow().disk_track() {
+            Some(disk_track) => disk_track,
+            None => 0,
         }
     }
 

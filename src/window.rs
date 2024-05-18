@@ -25,6 +25,7 @@ use crate::{
     song_details::SongDetails,
     sort::FuzzySorter,
     utils,
+    utils::cmp_two_songs,
     volume_control::VolumeControl,
     waveform_view::WaveformView,
 };
@@ -553,6 +554,7 @@ impl Window {
                             let queue = player.queue();
                             let was_empty = queue.is_empty();
 
+                            songs.sort_by(cmp_two_songs);
                             win.imp().playlist_view.end_loading();
 
                             // Bulk add to avoid hammering the UI with list model updates
