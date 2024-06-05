@@ -3,6 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
+use adw::prelude::AdwDialogExt;
 use adw::subclass::prelude::*;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 use ashpd::{desktop::background::Background, WindowIdentifier};
@@ -220,8 +221,7 @@ impl Application {
 
     fn show_about(&self) {
         let window = self.active_window().unwrap();
-        let dialog = adw::AboutWindow::builder()
-            .transient_for(&window)
+        let dialog = adw::AboutDialog::builder()
             .application_icon(APPLICATION_ID)
             .application_name("Amberol")
             .developer_name("Emmanuele Bassi")
@@ -235,7 +235,7 @@ impl Application {
             .translator_credits(i18n("translator-credits"))
             .build();
 
-        dialog.present();
+        dialog.present(&window);
     }
 
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
